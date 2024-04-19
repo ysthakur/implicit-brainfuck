@@ -127,6 +127,35 @@ object Eval {
       Eval[P, Tape[C +: L, N, R], I, O, RT, RI, RO]
   ): Eval[Right +: P, Tape[L, C, N +: R], I, O, RT, RI, RO] = ???
 
+  given input[
+      P <: HList,
+      L <: HList,
+      C <: Nat,
+      R <: HList,
+      IC <: Nat,
+      I <: Stream,
+      O <: Stream,
+      RT <: Tape[?, ?, ?],
+      RI <: Stream,
+      RO <: Stream
+  ](using
+      Eval[P, Tape[L, IC, R], I, O, RT, RI, RO]
+  ): Eval[Input +: P, Tape[L, C, R], IC +: I, O, RT, RI, RO] = ???
+
+  given output[
+      P <: HList,
+      L <: HList,
+      C <: Nat,
+      R <: HList,
+      I <: Stream,
+      O <: Stream,
+      RT <: Tape[?, ?, ?],
+      RI <: Stream,
+      RO <: Stream
+  ](using
+      Eval[P, Tape[L, C, R], I, C +: O, RT, RI, RO]
+  ): Eval[Output +: P, Tape[L, C, R], I, O, RT, RI, RO] = ???
+
   given loopEnd[
       P <: HList,
       B <: HList,
@@ -165,9 +194,9 @@ object Eval {
 
 def foo =
   summon[Eval[
-    Plus +: Plus +: Right +: Plus +: Loop[Left +: HNil] +: HNil,
+    Plus +: Plus +: Right +: Plus +: Loop[Left +: HNil] +: Input +: Output +: HNil,
     Tape[HNil, Zero, HNil],
-    HNil,
+    Succ[Succ[Succ[Zero]]] +: Zero +: HNil,
     HNil,
     ?,
     ?,
