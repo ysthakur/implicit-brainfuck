@@ -37,7 +37,10 @@ trait Eval[
     RT <: Tape[?, ?, ?],
     RI <: Stream,
     RO <: Stream
-]
+] {
+  type Stdout = RO
+  type OutTape = RT
+}
 
 object Eval {
   given empty[T <: Tape[?, ?, ?], I <: Stream, O <: Stream]
@@ -192,13 +195,14 @@ object Eval {
   ): Eval[Loop[B] +: P, T, I, O, PRT, PRI, PRO] = ???
 }
 
+
+def eval[P <: HList, I <: Stream](
+  using e: Eval[P, Tape[HNil, Zero, HNil], I, HNil, ?, ?, ?]
+): (e.Stdout, e.OutTape) = ???
+
+// Hover over foo to see the results
 def foo =
-  summon[Eval[
+  eval[
     Plus +: Plus +: Right +: Plus +: Loop[Left +: HNil] +: Input +: Output +: HNil,
-    Tape[HNil, Zero, HNil],
-    Succ[Succ[Succ[Zero]]] +: Zero +: HNil,
-    HNil,
-    ?,
-    ?,
-    ?
-  ]]
+    Succ[Succ[Succ[Zero]]] +: Zero +: HNil
+  ]
