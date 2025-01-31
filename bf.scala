@@ -1,5 +1,8 @@
 // Brainfuck interpreter
 
+// Open this in Scastie or some other editor, scroll to the bottom,
+// and hover over `foo` to see output.
+
 sealed trait Command
 object Plus extends Command
 object Minus extends Command
@@ -195,14 +198,64 @@ object Eval {
   ): Eval[Loop[B] +: P, T, I, O, PRT, PRI, PRO] = ???
 }
 
+/////////////// Begin presentation stuff /////////////////////
 
-def eval[P <: HList, I <: Stream](
-  using e: Eval[P, Tape[HNil, Zero, HNil], I, HNil, ?, ?, ?]
-): (e.Stdout, e.OutTape) = ???
+// Using compiletime ops and match types may be "cheating," but it's
+// just for making the output nicer when hovering over `foo` below.
+// None of this is required for evaluation, just implicits
+
+import scala.compiletime.ops.int.{+, S}
+
+type NatToInt[N] <: Int = N match {
+  case Zero    => 0
+  case Succ[n] => 1 + NatToInt[n]
+}
+// Using Tuple rather than HList so that output is formatted nicely
+type NatsToInts[L] <: Tuple = L match {
+  case HNil   => EmptyTuple
+  case n +: t => NatToInt[n] *: NatsToInts[t]
+}
+type TapeToInts[T <: Tape[?, ?, ?]] = T match {
+  case Tape[l, c, r] => (NatsToInts[l], NatToInt[c], NatsToInts[r])
+}
+
+type IntToNat[I <: Int] <: Nat = I match {
+  case 0    => Zero
+  case S[n] => Succ[IntToNat[n]]
+}
+type TupleToHList[T] <: HList = T match {
+  case EmptyTuple => HNil
+  case h *: t     => h +: TupleToHList[t]
+}
+
+def eval[P <: HList, I <: Stream](using
+    e: Eval[P, Tape[HNil, Zero, HNil], I, HNil, ?, ?, ?]
+): (NatsToInts[e.Stdout], TapeToInts[e.OutTape]) = ???
 
 // Hover over foo to see the results
+// Output should be ((3, 0, 2, 1), ((0, 4), 5, (3, 2, 1)))
+// (3, 0, 2, 1) is the output stream (reversed)
+// ((0, 4), 5, (3, 2, 1)) is the tape. The (0, 4) is reversed. 5 is the current position
 def foo =
   eval[
-    Plus +: Plus +: Right +: Plus +: Loop[Left +: HNil] +: Input +: Output +: HNil,
-    Succ[Succ[Succ[Zero]]] +: Zero +: HNil
+    TupleToHList[
+      (
+          Plus,
+          Plus,
+          Right,
+          Plus,
+          Output,
+          Loop[Left +: Output +: HNil],
+          Input,
+          Output,
+          Left,
+          Left,
+          Left,
+          Input,
+          Right,
+          Right,
+          Input
+      )
+    ],
+    TupleToHList[Tuple.Map[(3, 4, 5), IntToNat]]
   ]
